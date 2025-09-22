@@ -126,21 +126,14 @@ function MainTabs() {
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [userToken, setUserToken] = useState(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = await AsyncStorage.getItem("access");
-        setUserToken(token);
-      } catch (error) {
-        console.error("Error checking auth:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // Simulate loading time, then go directly to login
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
 
-    checkAuth();
+    return () => clearTimeout(timer);
   }, []);
 
   if (isLoading) {
@@ -155,14 +148,10 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {userToken ? (
-          <Stack.Screen name="Main" component={MainTabs} />
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        )}
+        {/* Always start with Login screen */}
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Main" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -36,18 +36,22 @@ const LoginScreen = ({ navigation }) => {
       });
 
       const data = await response.json();
+      console.log("Login response:", data);
 
       if (response.ok) {
+        // Store tokens - Use consistent key names
         await AsyncStorage.setItem("access", data.access_token);
         await AsyncStorage.setItem("refresh", data.refresh);
 
-        setUserToken(data.access_token);
-
         Alert.alert("Success", "Login successful!");
+
+        // Navigate to Main tabs
+        navigation.replace("Main");
       } else {
-        Alert.alert("Error", data.message || "Login failed");
+        Alert.alert("Error", data.detail || data.message || "Login failed");
       }
     } catch (error) {
+      console.error("Login error:", error);
       Alert.alert("Error", "Network error. Please try again.");
     } finally {
       setLoading(false);
