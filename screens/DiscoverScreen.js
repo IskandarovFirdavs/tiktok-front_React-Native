@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,51 +11,106 @@ import {
   Image,
   FlatList,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import { Video } from "expo-av";
 
 const { width } = Dimensions.get("window");
 
 const DiscoverScreen = () => {
   const [searchText, setSearchText] = useState("");
-  const [activeTab, setActiveTab] = useState("Top");
+  const [activeTab, setActiveTab] = useState("Users");
+  const [query, setQuery] = useState("");
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample trending hashtags
-  const trendingHashtags = [
-    { id: 1, tag: "#fyp", views: "2.1B" },
-    { id: 2, tag: "#viral", views: "1.8B" },
-    { id: 3, tag: "#dance", views: "956M" },
-    { id: 4, tag: "#comedy", views: "743M" },
-    { id: 5, tag: "#food", views: "621M" },
-  ];
+  useEffect(() => {
+    fetch("http://192.168.71.53:8000/posts/post/")
+      .then((res) => res.json())
+      .then((json) => {
+        console.log("Backenddan kelgan:", json);
+        setData(json.results);
+        setFilteredData(json.results);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
-  // Sample discover videos
+  const handleSearch = async (text) => {
+    setQuery(text);
+    try {
+      const res = await fetch(
+        `http://192.168.71.53:8000/posts/post/?search=${text}`
+      );
+      const json = await res.json();
+      console.log("Search natijasi:", json);
+      setFilteredData(json.results);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
+
+  const trendingHashtags = [{ id: 1, tag: "#fyp", views: "2.1B" }];
+
   const discoverVideos = [
     { id: 1, thumbnail: "/dancing-girl.jpg", views: "1.2M", duration: "0:15" },
+  ];
+  const sounds = [
     {
-      id: 2,
-      thumbnail: "/cooking-recipe.png",
-      views: "856K",
-      duration: "0:30",
+      id: 1,
+      title: "Cool Beat",
+      artist: "DJ Max",
+      cover: "https://picsum.photos/100/100?random=1",
     },
-    { id: 3, thumbnail: "/funny-cat.png", views: "2.1M", duration: "0:12" },
+  ];
+  const users = [
     {
-      id: 4,
-      thumbnail: "/makeup-tutorial.png",
-      views: "743K",
-      duration: "0:45",
-    },
-    { id: 5, thumbnail: "/travel-vlog.png", views: "1.5M", duration: "0:28" },
-    {
-      id: 6,
-      thumbnail: "/workout-fitness.png",
-      views: "923K",
-      duration: "0:22",
+      id: 1,
+      name: "john_doe",
+      followers: "120K",
+      avatar: "https://i.pravatar.cc/100?img=1",
     },
   ];
 
-  const tabs = ["Top", "Users", "Videos", "Sounds", "LIVE", "Hashtags"];
+  const tabs = ["Users", "Videos", "Sounds", "Hashtags"];
+
+  const renderUserItem = ({ item }) => (
+    <View style={styles.userItem}>
+      <Image source={{ uri: item.avatar }} style={styles.userAvatar} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.userName}>{item.name}</Text>
+        <Text style={styles.userFollowers}>{item.followers} followers</Text>
+      </View>
+      <TouchableOpacity style={styles.followButton}>
+        <Text style={styles.followButtonText}>Follow</Text>
+      </TouchableOpacity>
+    </View>
+  );
+  const renderSoundItem = ({ item }) => (
+    <View style={styles.soundItem}>
+      <Image source={{ uri: item.cover }} style={styles.soundCover} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.soundTitle}>{item.title}</Text>
+        <Text style={styles.soundArtist}>{item.artist}</Text>
+      </View>
+      <TouchableOpacity style={styles.useButton}>
+        <Text style={styles.useButtonText}>Use</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   const renderVideoItem = ({ item, index }) => (
     <TouchableOpacity style={styles.videoItem}>
@@ -99,8 +154,8 @@ const DiscoverScreen = () => {
             style={styles.searchInput}
             placeholder="Search"
             placeholderTextColor="#8A8A8A"
-            value={searchText}
-            onChangeText={setSearchText}
+            value={query}
+            onChangeText={handleSearch}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText("")}>
@@ -108,9 +163,6 @@ const DiscoverScreen = () => {
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity style={styles.scanButton}>
-          <Ionicons name="scan" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
       </View>
 
       {/* Tab Navigation */}
@@ -140,34 +192,50 @@ const DiscoverScreen = () => {
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === "Top" && (
+        {activeTab === "Users" && (
+          <View style={styles.section}>
+            <FlatList
+              data={filteredData}
+              renderItem={({ item }) => (
+                <Text style={styles.item}>{item.title}</Text>
+              )}
+              keyExtractor={(item) => item.id.toString()}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
+        {activeTab === "Videos" && (
           <>
-            {/* Trending Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Trending hashtags</Text>
               <FlatList
-                data={trendingHashtags}
-                renderItem={renderHashtagItem}
+                data={filteredData}
+                renderItem={({ item }) => (
+                  <View style={{ marginBottom: 20 }}>
+                    <Text style={{ color: "#fff" }}>{item.title}</Text>
+                    <Video
+                      source={{ uri: item.post }}
+                      style={{ width: "100%", height: 200 }}
+                      useNativeControls
+                      resizeMode="contain"
+                    />
+                  </View>
+                )}
                 keyExtractor={(item) => item.id.toString()}
-                scrollEnabled={false}
-              />
-            </View>
-
-            {/* Discover Videos */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Discover</Text>
-              <FlatList
-                data={discoverVideos}
-                renderItem={renderVideoItem}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={3}
-                scrollEnabled={false}
-                columnWrapperStyle={styles.videoRow}
               />
             </View>
           </>
         )}
 
+        {activeTab === "Sounds" && (
+          <View style={styles.section}>
+            <FlatList
+              data={sounds}
+              renderItem={renderSoundItem}
+              keyExtractor={(item) => item.id.toString()}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
         {activeTab === "Hashtags" && (
           <View style={styles.section}>
             <FlatList
@@ -176,13 +244,6 @@ const DiscoverScreen = () => {
               keyExtractor={(item) => item.id.toString()}
               scrollEnabled={false}
             />
-          </View>
-        )}
-
-        {/* Other tabs content would go here */}
-        {activeTab !== "Top" && activeTab !== "Hashtags" && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No results found</Text>
           </View>
         )}
       </ScrollView>
@@ -338,6 +399,69 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#8A8A8A",
     fontSize: 16,
+  },
+  userItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  userAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  userName: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  userFollowers: {
+    color: "#8A8A8A",
+    fontSize: 14,
+  },
+  followButton: {
+    backgroundColor: "#FF0050",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  followButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+
+  soundItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  soundCover: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  soundTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  soundArtist: {
+    color: "#8A8A8A",
+    fontSize: 14,
+  },
+  useButton: {
+    backgroundColor: "#1A1A1A",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#8A8A8A",
+  },
+  useButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
 });
 

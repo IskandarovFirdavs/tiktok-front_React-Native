@@ -24,7 +24,7 @@ const LoginScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://10.110.209.15:8000/users/login/", {
+      const response = await fetch("http://192.168.71.53:8000/users/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -39,13 +39,11 @@ const LoginScreen = ({ navigation }) => {
       console.log("Login response:", data);
 
       if (response.ok) {
-        // Store tokens - Use consistent key names
         await AsyncStorage.setItem("access", data.access_token);
         await AsyncStorage.setItem("refresh", data.refresh);
 
         Alert.alert("Success", "Login successful!");
 
-        // Navigate to Main tabs
         navigation.replace("Main");
       } else {
         Alert.alert("Error", data.detail || data.message || "Login failed");

@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -14,14 +13,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
+import { useIsFocused } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
-// Transform backend data to match frontend structure
 const transformPostData = (post) => {
   return {
     id: post.id.toString(),
-    uri: post.post, // This should be the full URL to the video file
+    uri: post.post,
     username: `@${post.user?.username || "user"}`,
     description: post.description || post.title || "No description",
     sound: post.music
@@ -45,6 +44,7 @@ const VideoItem = ({ item, isActive }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const videoRef = useRef(null);
+  const isFocused = useIsFocused();
 
   const togglePlayback = async () => {
     if (videoRef.current) {
@@ -83,6 +83,7 @@ const VideoItem = ({ item, isActive }) => {
       <Video
         ref={videoRef}
         source={{ uri: item.uri }}
+        paused={!isFocused}
         style={styles.video}
         resizeMode="cover"
         shouldPlay={isActive}
@@ -189,14 +190,13 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch videos from your Django API
   const fetchVideos = async () => {
     try {
       setLoading(true);
       setError(null);
 
       console.log("Fetching videos from API...");
-      const response = await fetch("http://10.110.209.15:8000/posts/posts/", {
+      const response = await fetch("http://192.168.71.53:8000/posts/post/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -212,20 +212,15 @@ const HomeScreen = () => {
       const data = await response.json();
       console.log("API Response data:", data);
 
-      // Handle different response formats
       let postsArray = [];
 
       if (Array.isArray(data)) {
-        // If response is directly an array
         postsArray = data;
       } else if (data.results && Array.isArray(data.results)) {
-        // If response has pagination format {results: [...]}
         postsArray = data.results;
       } else if (data.posts && Array.isArray(data.posts)) {
-        // If response has {posts: [...]} format
         postsArray = data.posts;
       } else if (data.data && Array.isArray(data.data)) {
-        // If response has {data: [...]} format
         postsArray = data.data;
       } else {
         console.warn("Unexpected API response format:", data);
@@ -234,7 +229,6 @@ const HomeScreen = () => {
 
       console.log("Posts array:", postsArray);
 
-      // Transform the backend data to match your frontend structure
       const transformedVideos = postsArray.map(transformPostData);
       setVideos(transformedVideos);
     } catch (err) {

@@ -55,7 +55,7 @@ const ProfileScreen = ({ navigation }) => {
         return;
       }
 
-      const userResponse = await fetch("http://10.110.209.15:8000/users/me/", {
+      const userResponse = await fetch("http://192.168.71.53:8000/users/me/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -65,7 +65,6 @@ const ProfileScreen = ({ navigation }) => {
 
       if (!userResponse.ok) {
         if (userResponse.status === 401) {
-          // Token is invalid, clear it
           await AsyncStorage.removeItem("access");
           setError("Authentication failed. Please log in again.");
         } else {
@@ -78,7 +77,6 @@ const ProfileScreen = ({ navigation }) => {
       const userData = await userResponse.json();
       setUserData(userData);
 
-      // Mock videos data
       const mockVideos = [
         {
           id: "1",

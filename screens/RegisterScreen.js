@@ -50,7 +50,7 @@ const RegisterScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://10.110.209.15:8000/users/", {
+      const response = await fetch("http://192.168.71.53:8000/users/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
