@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../src/api/api";
 
 const { width } = Dimensions.get("window");
 
@@ -48,57 +49,32 @@ const ProfileScreen = ({ navigation }) => {
       setError(null);
 
       const token = await getAuthToken();
-
       if (!token) {
         setError("Authentication required. Please log in.");
         setLoading(false);
         return;
       }
 
-      const userResponse = await fetch("http://192.168.71.53:8000/users/me/", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!userResponse.ok) {
-        if (userResponse.status === 401) {
-          await AsyncStorage.removeItem("access");
-          setError("Authentication failed. Please log in again.");
-        } else {
-          throw new Error(`Server returned ${userResponse.status}`);
-        }
-        setLoading(false);
-        return;
-      }
-
-      const userData = await userResponse.json();
+      // 👤 User info
+      const userData = await api.get("/users/me/", token);
       setUserData(userData);
 
-      const mockVideos = [
-        {
-          id: "1",
-          thumbnail: "https://placehold.co/600x400/000000/FFFFFF/png",
-          views: "2.1M",
-          duration: "0:15",
-        },
-        {
-          id: "2",
-          thumbnail: "https://placehold.co/600x400/000000/FFFFFF/png",
-          views: "1.8M",
-          duration: "0:30",
-        },
-        {
-          id: "3",
-          thumbnail: "https://placehold.co/600x400/000000/FFFFFF/png",
-          views: "3.2M",
-          duration: "0:12",
-        },
-      ];
+      // 🎬 User videos
+      const posts = await api.get("/posts/post/", token);
 
-      setVideos(mockVideos);
+      // Ba’zi backendlarda array bevosita keladi, ba’zilarida esa { results: [...] }
+      const postsArray = Array.isArray(posts)
+        ? posts
+        : posts.results || posts.data || [];
+
+      const transformedVideos = postsArray.map((post) => ({
+        id: post.id,
+        thumbnail: post.thumbnail || "https://via.placeholder.com/300x500.png",
+        duration: post.duration || "0:30",
+        views: post.views || "0",
+      }));
+
+      setVideos(transformedVideos);
     } catch (error) {
       console.error("Error fetching user data:", error);
       setError(error.message || "Failed to fetch data. Check your connection.");

@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import api from "../src/api/api";
 
 const RegisterScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -50,32 +51,22 @@ const RegisterScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://192.168.71.53:8000/users/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          password,
-          first_name: firstName,
-          last_name: lastName,
-        }),
+      const data = await api.post("/users/", {
+        username,
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (!data.username) {
+        Alert.alert("Error", JSON.stringify(data));
+      } else {
         Alert.alert("Success", "Registration successful! Please login.");
         navigation.navigate("Login");
-      } else {
-        const errorMessage =
-          Object.values(data).flat().join("\n") || "Registration failed";
-        Alert.alert("Error", errorMessage);
       }
     } catch (error) {
-      Alert.alert("Error", "Network error. Please try again.", error);
+      Alert.alert("Error", "Network error. Please try again.");
     } finally {
       setLoading(false);
     }

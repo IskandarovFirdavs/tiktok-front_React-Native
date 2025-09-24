@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../src/api/api";
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -24,26 +25,13 @@ const LoginScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://192.168.71.53:8000/users/login/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      });
+      const data = await api.post("/users/login/", { username, password });
 
-      const data = await response.json();
-      console.log("Login response:", data);
-
-      if (response.ok) {
+      if (data.access_token) {
         await AsyncStorage.setItem("access", data.access_token);
         await AsyncStorage.setItem("refresh", data.refresh);
 
         Alert.alert("Success", "Login successful!");
-
         navigation.replace("Main");
       } else {
         Alert.alert("Error", data.detail || data.message || "Login failed");

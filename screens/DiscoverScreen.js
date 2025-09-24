@@ -16,7 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { Video } from "expo-av";
-
+import api from "../src/api/api";
 const { width } = Dimensions.get("window");
 
 const DiscoverScreen = () => {
@@ -26,27 +26,30 @@ const DiscoverScreen = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [videos, setVideos] = useState([]);
 
   useEffect(() => {
-    fetch("http://192.168.71.53:8000/posts/post/")
-      .then((res) => res.json())
-      .then((json) => {
-        console.log("Backenddan kelgan:", json);
-        setData(json.results);
-        setFilteredData(json.results);
+    const fetchVideos = async () => {
+      try {
+        setLoading(true);
+        const data = await api.get("/posts/post/");
+        const postsArray = Array.isArray(data) ? data : data.results || [];
+        setVideos(postsArray);
+      } catch (e) {
+        console.error("Error fetching videos:", e);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchVideos();
   }, []);
 
   const handleSearch = async (text) => {
     setQuery(text);
     try {
       const res = await fetch(
-        `http://192.168.71.53:8000/posts/post/?search=${text}`
+        `http://10.19.59.15:8000/posts/post/?search=${text}`
       );
       const json = await res.json();
       console.log("Search natijasi:", json);
@@ -112,17 +115,13 @@ const DiscoverScreen = () => {
     </View>
   );
 
-  const renderVideoItem = ({ item, index }) => (
-    <TouchableOpacity style={styles.videoItem}>
-      <Image source={{ uri: item.thumbnail }} style={styles.videoThumbnail} />
-      <View style={styles.videoOverlay}>
-        <Text style={styles.videoDuration}>{item.duration}</Text>
-      </View>
-      <View style={styles.videoInfo}>
-        <Ionicons name="play" size={12} color="#FFFFFF" />
-        <Text style={styles.videoViews}>{item.views}</Text>
-      </View>
-    </TouchableOpacity>
+  const renderVideoItem = ({ item }) => (
+    <Video
+      source={{ uri: item.post }}
+      style={{ width: "100%", height: 220, marginBottom: 10 }}
+      useNativeControls
+      resizeMode="cover"
+    />
   );
 
   const renderHashtagItem = ({ item }) => (
@@ -191,62 +190,53 @@ const DiscoverScreen = () => {
       </ScrollView>
 
       {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === "Users" && (
-          <View style={styles.section}>
+      {activeTab === "Users" && (
+        <View style={styles.section}>
+          <FlatList
+            data={filteredData}
+            renderItem={({ item }) => (
+              <Text style={styles.item}>{item.title}</Text>
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+          />
+        </View>
+      )}
+      {activeTab === "Videos" && (
+        <View style={styles.section}>
+          {loading ? (
+            <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+          ) : (
             <FlatList
-              data={filteredData}
-              renderItem={({ item }) => (
-                <Text style={styles.item}>{item.title}</Text>
-              )}
+              data={videos}
+              renderItem={renderVideoItem}
               keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
+              contentContainerStyle={styles.section}
             />
-          </View>
-        )}
-        {activeTab === "Videos" && (
-          <>
-            <View style={styles.section}>
-              <FlatList
-                data={filteredData}
-                renderItem={({ item }) => (
-                  <View style={{ marginBottom: 20 }}>
-                    <Text style={{ color: "#fff" }}>{item.title}</Text>
-                    <Video
-                      source={{ uri: item.post }}
-                      style={{ width: "100%", height: 200 }}
-                      useNativeControls
-                      resizeMode="contain"
-                    />
-                  </View>
-                )}
-                keyExtractor={(item) => item.id.toString()}
-              />
-            </View>
-          </>
-        )}
+          )}
+        </View>
+      )}
 
-        {activeTab === "Sounds" && (
-          <View style={styles.section}>
-            <FlatList
-              data={sounds}
-              renderItem={renderSoundItem}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-            />
-          </View>
-        )}
-        {activeTab === "Hashtags" && (
-          <View style={styles.section}>
-            <FlatList
-              data={trendingHashtags}
-              renderItem={renderHashtagItem}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-            />
-          </View>
-        )}
-      </ScrollView>
+      {activeTab === "Sounds" && (
+        <View style={styles.section}>
+          <FlatList
+            data={sounds}
+            renderItem={renderSoundItem}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+          />
+        </View>
+      )}
+      {activeTab === "Hashtags" && (
+        <View style={styles.section}>
+          <FlatList
+            data={trendingHashtags}
+            renderItem={renderHashtagItem}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+          />
+        </View>
+      )}
     </View>
   );
 };

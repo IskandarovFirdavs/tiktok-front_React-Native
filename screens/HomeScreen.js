@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
 import { useIsFocused } from "@react-navigation/native";
+import api from "../src/api/api";
 
 const { width, height } = Dimensions.get("window");
 
@@ -195,40 +196,11 @@ const HomeScreen = () => {
       setLoading(true);
       setError(null);
 
-      console.log("Fetching videos from API...");
-      const response = await fetch("http://192.168.71.53:8000/posts/post/", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const data = await api.get("/posts/post/");
 
-      console.log("Response status:", response.status);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("API Response data:", data);
-
-      let postsArray = [];
-
-      if (Array.isArray(data)) {
-        postsArray = data;
-      } else if (data.results && Array.isArray(data.results)) {
-        postsArray = data.results;
-      } else if (data.posts && Array.isArray(data.posts)) {
-        postsArray = data.posts;
-      } else if (data.data && Array.isArray(data.data)) {
-        postsArray = data.data;
-      } else {
-        console.warn("Unexpected API response format:", data);
-        postsArray = [];
-      }
-
-      console.log("Posts array:", postsArray);
-
+      let postsArray = Array.isArray(data)
+        ? data
+        : data.results || data.posts || data.data || [];
       const transformedVideos = postsArray.map(transformPostData);
       setVideos(transformedVideos);
     } catch (err) {
