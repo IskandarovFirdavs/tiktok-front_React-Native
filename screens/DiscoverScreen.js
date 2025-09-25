@@ -48,16 +48,15 @@ const DiscoverScreen = () => {
   const handleSearch = async (text) => {
     setQuery(text);
     try {
-      const res = await fetch(
-        `http://10.19.59.15:8000/posts/post/?search=${text}`
-      );
-      const json = await res.json();
-      console.log("Search natijasi:", json);
-      setFilteredData(json.results);
+      const res = await api.get(`/users/?search=${text}`);
+      console.log("text: ", text);
+      console.log("Search natijasi:", res);
+      setFilteredData(res.results || []);
     } catch (err) {
-      console.error(err);
+      console.error("Search error:", err);
     }
   };
+
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -190,53 +189,53 @@ const DiscoverScreen = () => {
       </ScrollView>
 
       {/* Content */}
-      {activeTab === "Users" && (
-        <View style={styles.section}>
-          <FlatList
-            data={filteredData}
-            renderItem={({ item }) => (
-              <Text style={styles.item}>{item.title}</Text>
-            )}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-          />
-        </View>
-      )}
-      {activeTab === "Videos" && (
-        <View style={styles.section}>
-          {loading ? (
-            <ActivityIndicator size="large" style={{ marginTop: 20 }} />
-          ) : (
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {activeTab === "Users" && (
+          <View style={styles.section}>
             <FlatList
-              data={videos}
-              renderItem={renderVideoItem}
-              keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={styles.section}
+              data={filteredData}
+              renderItem={renderUserItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
             />
-          )}
-        </View>
-      )}
+          </View>
+        )}
+        {activeTab === "Videos" && (
+          <View style={styles.section}>
+            {loading ? (
+              <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+            ) : (
+              <FlatList
+                data={videos}
+                renderItem={renderVideoItem}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.section}
+              />
+            )}
+          </View>
+        )}
 
-      {activeTab === "Sounds" && (
-        <View style={styles.section}>
-          <FlatList
-            data={sounds}
-            renderItem={renderSoundItem}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-          />
-        </View>
-      )}
-      {activeTab === "Hashtags" && (
-        <View style={styles.section}>
-          <FlatList
-            data={trendingHashtags}
-            renderItem={renderHashtagItem}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-          />
-        </View>
-      )}
+        {activeTab === "Sounds" && (
+          <View style={styles.section}>
+            <FlatList
+              data={sounds}
+              renderItem={renderSoundItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
+        {activeTab === "Hashtags" && (
+          <View style={styles.section}>
+            <FlatList
+              data={trendingHashtags}
+              renderItem={renderHashtagItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 };

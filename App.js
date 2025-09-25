@@ -29,11 +29,11 @@ function MainTabs() {
         tabBarInactiveTintColor: "#8A8A8A",
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#000000",
+          backgroundColor: "#3c3c3cff",
           borderTopWidth: 0,
-          height: 70,
+          height: 90,
           paddingBottom: 8,
-          paddingTop: 8,
+          paddingTop: 15,
         },
         tabBarLabelStyle: {
           fontSize: 10,
@@ -76,6 +76,7 @@ function MainTabs() {
               style={[
                 styles.createButton,
                 { backgroundColor: focused ? "#FF0050" : "#FF0050" },
+                { marginTop: 10 },
               ]}
             >
               <Ionicons name="add" size={20} color="#FFFFFF" />
