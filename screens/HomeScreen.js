@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   rightBar: {
     position: "absolute",
     right: 12,
-    bottom: 40,
+    bottom: 65,
     alignItems: "center",
     zIndex: 10,
   },
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   },
   bottomOverlay: {
     position: "absolute",
-    bottom: -60,
+    bottom: -40,
     left: 0,
     right: 0,
     height: 220,

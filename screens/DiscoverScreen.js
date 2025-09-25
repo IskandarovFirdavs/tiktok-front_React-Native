@@ -93,8 +93,10 @@ const DiscoverScreen = () => {
     <View style={styles.userItem}>
       <Image source={{ uri: item.avatar }} style={styles.userAvatar} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.userName}>{item.name}</Text>
-        <Text style={styles.userFollowers}>{item.followers} followers</Text>
+        <Text style={styles.userName}>{item.username}</Text>
+        <Text style={styles.userFollowers}>
+          {item.first_name} {item.last_name}
+        </Text>
       </View>
       <TouchableOpacity style={styles.followButton}>
         <Text style={styles.followButtonText}>Follow</Text>
@@ -404,6 +406,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
+    marginLeft: 1,
   },
   userFollowers: {
     color: "#8A8A8A",
