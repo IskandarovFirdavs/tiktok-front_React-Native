@@ -166,7 +166,7 @@ const DiscoverScreen = () => {
       </View>
 
       {/* Tab Navigation */}
-      <ScrollView
+      <View
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.tabContainer}
@@ -188,10 +188,10 @@ const DiscoverScreen = () => {
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === "Users" && (
           <View style={styles.section}>
             <FlatList
@@ -237,7 +237,7 @@ const DiscoverScreen = () => {
             />
           </View>
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 };
@@ -277,6 +277,9 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     maxHeight: 50,
+    display: "flex",
+    borderBottomWidth: 1,
+    borderBottomColor: "#1A1A1A",
   },
   tabContent: {
     paddingHorizontal: 16,
