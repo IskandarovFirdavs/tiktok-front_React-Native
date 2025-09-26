@@ -23,10 +23,11 @@ const DiscoverScreen = () => {
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("Users");
   const [query, setQuery] = useState("");
-  const [data, setData] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [videos, setVideos] = useState([]);
+  const [hashtag, setHashtag] = useState([]);
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -44,14 +45,68 @@ const DiscoverScreen = () => {
 
     fetchVideos();
   }, []);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await api.get("/users/");
+        setAllUsers(res.results || []);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    const fetchHashtags = async () => {
+      try {
+        setLoading(true);
+        const data = await api.get("/posts/hashtags/");
+        const hashtagsArray = Array.isArray(data) ? data : data.results || [];
+        setHashtag(hashtagsArray);
+      } catch (e) {
+        console.error("Error fetching hashtags:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHashtags();
+  }, []);
 
   const handleSearch = async (text) => {
     setQuery(text);
+
     try {
-      const res = await api.get(`/users/?search=${text}`);
-      console.log("text: ", text);
-      console.log("Search natijasi:", res);
-      setFilteredData(res.results || []);
+      if (activeTab === "Users") {
+        if (text.trim().length === 0) {
+          setFilteredData(allUsers);
+        } else {
+          const res = await api.get(`/users/?search=${text}`);
+          setFilteredData(res.results || []);
+        }
+      } else if (activeTab === "Videos") {
+        if (text.trim().length === 0) {
+          const data = await api.get("/posts/post/");
+          const postsArray = Array.isArray(data) ? data : data.results || [];
+          setVideos(postsArray);
+        } else {
+          const res = await api.get(`/posts/post/?search=${text}`);
+          const postsArray = Array.isArray(res) ? res : res.results || [];
+          setVideos(postsArray);
+        }
+      } else if (activeTab === "Hashtags") {
+        if (text.trim().length === 0) {
+          const data = await api.get("/posts/hashtags/");
+          const hashtagsArray = Array.isArray(data) ? data : data.results || [];
+          setHashtag(hashtagsArray);
+        } else {
+          const res = await api.get(`/posts/hashtags/?search=${text}`);
+          const hashtagsArray = Array.isArray(res) ? res : res.results || [];
+          setHashtag(hashtagsArray);
+        }
+      }
     } catch (err) {
       console.error("Search error:", err);
     }
@@ -65,25 +120,12 @@ const DiscoverScreen = () => {
     );
   }
 
-  const trendingHashtags = [{ id: 1, tag: "#fyp", views: "2.1B" }];
-
-  const discoverVideos = [
-    { id: 1, thumbnail: "/dancing-girl.jpg", views: "1.2M", duration: "0:15" },
-  ];
   const sounds = [
     {
       id: 1,
       title: "Cool Beat",
       artist: "DJ Max",
       cover: "https://picsum.photos/100/100?random=1",
-    },
-  ];
-  const users = [
-    {
-      id: 1,
-      name: "john_doe",
-      followers: "120K",
-      avatar: "https://i.pravatar.cc/100?img=1",
     },
   ];
 
@@ -117,12 +159,15 @@ const DiscoverScreen = () => {
   );
 
   const renderVideoItem = ({ item }) => (
-    <Video
-      source={{ uri: item.post }}
-      style={{ width: "100%", height: 220, marginBottom: 10 }}
-      useNativeControls
-      resizeMode="cover"
-    />
+    <View style={styles.sectionVideo}>
+      <Video
+        source={{ uri: item.post }}
+        style={{ width: "100%", height: 220, marginBottom: 10 }}
+        useNativeControls
+        resizeMode="cover"
+      />
+      <Text style={styles.hashtagText}>{item.title}</Text>
+    </View>
   );
 
   const renderHashtagItem = ({ item }) => (
@@ -131,8 +176,7 @@ const DiscoverScreen = () => {
         <Text style={styles.hashtagSymbol}>#</Text>
       </View>
       <View style={styles.hashtagInfo}>
-        <Text style={styles.hashtagText}>{item.tag}</Text>
-        <Text style={styles.hashtagViews}>{item.views} views</Text>
+        <Text style={styles.hashtagText}>{item.name}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -166,7 +210,7 @@ const DiscoverScreen = () => {
       </View>
 
       {/* Tab Navigation */}
-      <View
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.tabContainer}
@@ -188,30 +232,32 @@ const DiscoverScreen = () => {
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
       {/* Content */}
-      <View style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === "Users" && (
           <View style={styles.section}>
             <FlatList
-              data={filteredData}
+              data={filteredData.length > 0 || query ? filteredData : allUsers}
               renderItem={renderUserItem}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
             />
           </View>
         )}
+
         {activeTab === "Videos" && (
-          <View style={styles.section}>
+          <View style={styles.viewVideo}>
             {loading ? (
               <ActivityIndicator size="large" style={{ marginTop: 20 }} />
             ) : (
               <FlatList
                 data={videos}
                 renderItem={renderVideoItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.section}
+                keyExtractor={(item) => item.id.toString()}
+                numColumns={2} // yoki 3 ustun
+                columnWrapperStyle={{ justifyContent: "space-between" }}
               />
             )}
           </View>
@@ -230,14 +276,14 @@ const DiscoverScreen = () => {
         {activeTab === "Hashtags" && (
           <View style={styles.section}>
             <FlatList
-              data={trendingHashtags}
+              data={hashtag}
               renderItem={renderHashtagItem}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
             />
           </View>
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -277,9 +323,6 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     maxHeight: 50,
-    display: "flex",
-    borderBottomWidth: 1,
-    borderBottomColor: "#1A1A1A",
   },
   tabContent: {
     paddingHorizontal: 16,
@@ -308,6 +351,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 24,
   },
+  viewVideo: {
+    paddingHorizontal: "10%",
+    flex: 1,
+  },
+  sectionVideo: {
+    width: "45%",
+    marginBottom: 12,
+  },
+
   sectionTitle: {
     color: "#FFFFFF",
     fontSize: 18,
