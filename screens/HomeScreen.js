@@ -42,6 +42,8 @@ const transformPostData = (post) => {
 
 const VideoItem = ({ item, isActive }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const videoRef = useRef(null);
@@ -50,6 +52,7 @@ const VideoItem = ({ item, isActive }) => {
   const togglePlayback = async () => {
     if (videoRef.current) {
       const status = await videoRef.current.getStatusAsync();
+
       if (status.isPlaying) {
         await videoRef.current.pauseAsync();
         setIsPlaying(false);
@@ -57,10 +60,19 @@ const VideoItem = ({ item, isActive }) => {
         await videoRef.current.playAsync();
         setIsPlaying(true);
       }
+
+      // Har bosilganda boshqaruv tugmalarini ko‘rsatamiz
+      setShowControls(true);
+
+      setTimeout(() => setShowControls(false), 1000);
     }
   };
 
-  React.useEffect(() => {
+  const toggleMute = () => {
+    setIsMuted((prev) => !prev);
+  };
+
+  useEffect(() => {
     if (videoRef.current) {
       if (isActive) {
         videoRef.current.playAsync();
@@ -80,31 +92,45 @@ const VideoItem = ({ item, isActive }) => {
         translucent
       />
 
-      {/* Video Player */}
       <Video
         ref={videoRef}
         source={{ uri: item.uri }}
-        paused={!isFocused}
         style={styles.video}
         resizeMode="cover"
         shouldPlay={isActive}
         isLooping
-        isMuted={false}
+        isMuted={isMuted}
       />
 
-      {/* Tap to play/pause overlay */}
+      {/* Tap overlay */}
       <TouchableOpacity
         style={styles.videoOverlay}
         onPress={togglePlayback}
         activeOpacity={1}
       >
-        {!isPlaying && isActive && (
+        {/* Pause/Play Icon */}
+        {showControls && (
           <View style={styles.playButton}>
-            <Ionicons name="play" size={60} color="rgba(255,255,255,0.8)" />
+            <Ionicons
+              name={isPlaying ? "pause" : "play"}
+              size={60}
+              color="rgba(255,255,255,0.8)"
+            />
           </View>
         )}
       </TouchableOpacity>
 
+      {/* Mute tugma faqat showControls true bo‘lganda ko‘rinadi */}
+      {showControls && (
+        <TouchableOpacity style={styles.muteButton} onPress={toggleMute}>
+          <Ionicons
+            name={isMuted ? "volume-mute" : "volume-high"}
+            size={28}
+            color="white"
+          />
+          <Text style={styles.muteText}>{isMuted ? "Muted" : "Sound On"}</Text>
+        </TouchableOpacity>
+      )}
       <View style={styles.rightBar}>
         {/* Profile with red dot indicator */}
         <TouchableOpacity style={styles.profileContainer}>
@@ -561,6 +587,24 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     marginLeft: 100,
+  },
+  muteButton: {
+    position: "absolute",
+    bottom: 50,
+    left: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 15,
+  },
+  muteText: {
+    color: "white",
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 
