@@ -108,29 +108,34 @@ const VideoItem = ({ item, isActive }) => {
         onPress={togglePlayback}
         activeOpacity={1}
       >
-        {/* Pause/Play Icon */}
         {showControls && (
-          <View style={styles.playButton}>
+          <View style={styles.centerControls}>
+            {/* Pause / Play */}
             <Ionicons
               name={isPlaying ? "pause" : "play"}
               size={60}
-              color="rgba(255,255,255,0.8)"
+              color="rgba(255,255,255,0.9)"
+              style={{ marginBottom: 20 }}
             />
+
+            {/* Mute / Unmute */}
+            <TouchableOpacity
+              onPress={toggleMute}
+              style={styles.muteCenterButton}
+            >
+              <Ionicons
+                name={isMuted ? "volume-mute" : "volume-high"}
+                size={30}
+                color="white"
+              />
+              <Text style={styles.muteText}>
+                {isMuted ? "Muted" : "Sound On"}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
       </TouchableOpacity>
 
-      {/* Mute tugma faqat showControls true bo‘lganda ko‘rinadi */}
-      {showControls && (
-        <TouchableOpacity style={styles.muteButton} onPress={toggleMute}>
-          <Ionicons
-            name={isMuted ? "volume-mute" : "volume-high"}
-            size={28}
-            color="white"
-          />
-          <Text style={styles.muteText}>{isMuted ? "Muted" : "Sound On"}</Text>
-        </TouchableOpacity>
-      )}
       <View style={styles.rightBar}>
         {/* Profile with red dot indicator */}
         <TouchableOpacity style={styles.profileContainer}>
@@ -588,18 +593,24 @@ const styles = StyleSheet.create({
   headerButton: {
     marginLeft: 100,
   },
-  muteButton: {
+  centerControls: {
     position: "absolute",
-    bottom: 50,
-    left: 20,
+    top: "40%", // ekranning o‘rtasida
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  muteCenterButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    zIndex: 15,
   },
+
   muteText: {
     color: "white",
     marginLeft: 6,
