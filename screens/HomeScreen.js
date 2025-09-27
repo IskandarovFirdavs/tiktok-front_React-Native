@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
 import { useIsFocused } from "@react-navigation/native";
 import api from "../src/api/api";
-
+import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
 
 const transformPostData = (post) => {
@@ -190,6 +190,7 @@ const HomeScreen = () => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigation = useNavigation();
 
   const fetchVideos = async () => {
     try {
@@ -294,6 +295,12 @@ const HomeScreen = () => {
                 For You
               </Text>
               {activeTab === "For You" && <View style={styles.tabIndicator} />}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => navigation.navigate("Discover")}
+            >
+              <Ionicons name="search" size={22} color="white" />
             </TouchableOpacity>
           </View>
         </View>
@@ -551,6 +558,9 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontWeight: "500",
     flex: 1,
+  },
+  headerButton: {
+    marginLeft: 100,
   },
 });
 

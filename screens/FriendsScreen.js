@@ -11,9 +11,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 
 const FriendsScreen = () => {
   const [activeTab, setActiveTab] = useState("Discover");
+  const navigation = useNavigation();
 
   const suggestedUsers = [
     {
@@ -85,7 +87,10 @@ const FriendsScreen = () => {
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Friends</Text>
-        <TouchableOpacity style={styles.headerButton}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => navigation.navigate("Discover")}
+        >
           <Ionicons name="person-add" size={24} color="white" />
         </TouchableOpacity>
       </View>
@@ -136,7 +141,10 @@ const FriendsScreen = () => {
         {activeTab === "Discover" && (
           <>
             <View style={styles.quickActions}>
-              <TouchableOpacity style={styles.actionButton}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => navigation.navigate("Discover")}
+              >
                 <View style={styles.actionIcon}>
                   <Ionicons name="search" size={24} color="#FF0050" />
                 </View>

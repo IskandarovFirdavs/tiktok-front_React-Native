@@ -152,6 +152,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="Discover" component={DiscoverScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
