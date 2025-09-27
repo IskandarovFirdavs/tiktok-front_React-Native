@@ -1,4 +1,5 @@
 "use client";
+import { Audio } from "expo-av";
 
 import { useState, useEffect } from "react";
 import {
@@ -29,6 +30,35 @@ const DiscoverScreen = () => {
   const [videos, setVideos] = useState([]);
   const [hashtag, setHashtag] = useState([]);
   const [music, setMusic] = useState([]);
+  const [sound, setSound] = useState(null);
+  const [currentTrackId, setCurrentTrackId] = useState(null);
+
+  async function toggleSound(item) {
+    try {
+      if (currentTrackId === item.id && sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        setSound(null);
+        setCurrentTrackId(null);
+        return;
+      }
+
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+      }
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: item.file },
+        { shouldPlay: true }
+      );
+
+      setSound(newSound);
+      setCurrentTrackId(item.id);
+    } catch (err) {
+      console.error("Audio error:", err);
+    }
+  }
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -180,8 +210,13 @@ const DiscoverScreen = () => {
         <Text style={styles.soundTitle}>{item.music_name}</Text>
         <Text style={styles.soundArtist}>{item.singer}</Text>
       </View>
-      <TouchableOpacity style={styles.useButton}>
-        <Text style={styles.useButtonText}>Use</Text>
+      <TouchableOpacity
+        style={styles.useButton}
+        onPress={() => toggleSound(item)}
+      >
+        <Text style={styles.useButtonText}>
+          {currentTrackId === item.id ? "⏸ Stop" : "▶ Play"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
