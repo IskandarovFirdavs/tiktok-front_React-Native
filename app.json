@@ -20,6 +20,8 @@
       "edgeToEdgeEnabled": true
     },
     "web": {},
-    "plugins": []
+    "plugins": [
+      "expo-video"
+    ]
   }
 }

@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -7,7 +6,6 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 // Import screens
 import HomeScreen from "./screens/HomeScreen";
 import InboxScreen from "./screens/InboxScreen";
@@ -16,6 +14,7 @@ import CreateScreen from "./screens/CreateScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
 import DiscoverScreen from "./screens/DiscoverScreen";
+import FriendsScreen from "./screens/FriendsScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -55,12 +54,12 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Discover"
-        component={DiscoverScreen}
+        name="Friends"
+        component={FriendsScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "search" : "search-outline"}
+              name={focused ? "people" : "people-outline"}
               size={24}
               color={focused ? "#FFFFFF" : "#8A8A8A"}
             />

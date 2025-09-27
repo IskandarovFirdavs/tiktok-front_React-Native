@@ -28,6 +28,7 @@ const DiscoverScreen = () => {
   const [loading, setLoading] = useState(true);
   const [videos, setVideos] = useState([]);
   const [hashtag, setHashtag] = useState([]);
+  const [music, setMusic] = useState([]);
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -75,6 +76,23 @@ const DiscoverScreen = () => {
     fetchHashtags();
   }, []);
 
+  useEffect(() => {
+    const fetchMusics = async () => {
+      try {
+        setLoading(true);
+        const data = await api.get("/posts/musics/");
+        const musicsArray = Array.isArray(data) ? data : data.results || [];
+        setMusic(musicsArray);
+      } catch (e) {
+        console.error("Error fetching hashtags:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMusics();
+  }, []);
+
   const handleSearch = async (text) => {
     setQuery(text);
 
@@ -105,6 +123,16 @@ const DiscoverScreen = () => {
           const res = await api.get(`/posts/hashtags/?search=${text}`);
           const hashtagsArray = Array.isArray(res) ? res : res.results || [];
           setHashtag(hashtagsArray);
+        }
+      } else if (activeTab === "Sounds") {
+        if (text.trim().length === 0) {
+          const data = await api.get("/posts/musics/");
+          const musicsArray = Array.isArray(data) ? data : data.results || [];
+          setMusic(musicsArray);
+        } else {
+          const res = await api.get(`/posts/musics/?search=${text}`);
+          const musicsArray = Array.isArray(res) ? res : res.results || [];
+          setMusic(musicsArray);
         }
       }
     } catch (err) {
@@ -149,8 +177,8 @@ const DiscoverScreen = () => {
     <View style={styles.soundItem}>
       <Image source={{ uri: item.cover }} style={styles.soundCover} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.soundTitle}>{item.title}</Text>
-        <Text style={styles.soundArtist}>{item.artist}</Text>
+        <Text style={styles.soundTitle}>{item.music_name}</Text>
+        <Text style={styles.soundArtist}>{item.singer}</Text>
       </View>
       <TouchableOpacity style={styles.useButton}>
         <Text style={styles.useButtonText}>Use</Text>
@@ -266,7 +294,7 @@ const DiscoverScreen = () => {
         {activeTab === "Sounds" && (
           <View style={styles.section}>
             <FlatList
-              data={sounds}
+              data={music}
               renderItem={renderSoundItem}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
