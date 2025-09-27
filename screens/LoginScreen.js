@@ -30,8 +30,6 @@ const LoginScreen = ({ navigation }) => {
       if (data.access_token) {
         await AsyncStorage.setItem("access", data.access_token);
         await AsyncStorage.setItem("refresh", data.refresh);
-
-        Alert.alert("Success", "Login successful!");
         navigation.replace("Main");
       } else {
         Alert.alert("Error", data.detail || data.message || "Login failed");
