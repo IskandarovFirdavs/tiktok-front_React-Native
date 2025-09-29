@@ -31,12 +31,16 @@ const transformPostData = (post) => {
     comments: post.comments_count?.toString() || "0",
     saves: "0",
     shares: "0",
-    profileImage: "https://randomuser.me/api/portraits/lego/1.jpg",
-    albumImage: "https://randomuser.me/api/portraits/lego/2.jpg",
+    profileImage: post.user?.avatar
+      ? post.user.avatar
+      : "https://ui-avatars.com/api/?name=" + (post.user?.username || "U"),
+    albumImage:
+      post.user?.avatar || "https://randomuser.me/api/portraits/lego/2.jpg",
     isFollowing: false,
     fileName: post.post?.split("/").pop() || "video.mp4",
     extension: "mp4",
     title: post.title || "Video",
+    hashtags: post.hashtags?.map((h) => `#${h.name}`).join(" ") || "",
   };
 };
 
@@ -61,7 +65,6 @@ const VideoItem = ({ item, isActive }) => {
         setIsPlaying(true);
       }
 
-      // Har bosilganda boshqaruv tugmalarini ko‘rsatamiz
       setShowControls(true);
 
       setTimeout(() => setShowControls(false), 1000);
@@ -209,6 +212,9 @@ const VideoItem = ({ item, isActive }) => {
               {item.sound}
             </Text>
           </TouchableOpacity>
+          <Text style={styles.videoDescription} numberOfLines={2}>
+            {item.hashtags}
+          </Text>
         </View>
       </View>
     </View>
