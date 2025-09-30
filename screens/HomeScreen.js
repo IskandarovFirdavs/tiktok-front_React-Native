@@ -46,7 +46,6 @@ const transformPostData = (post) => {
 
 const VideoItem = ({ item, isActive }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -69,10 +68,6 @@ const VideoItem = ({ item, isActive }) => {
 
       setTimeout(() => setShowControls(false), 1000);
     }
-  };
-
-  const toggleMute = () => {
-    setIsMuted((prev) => !prev);
   };
 
   useEffect(() => {
@@ -102,7 +97,6 @@ const VideoItem = ({ item, isActive }) => {
         resizeMode="cover"
         shouldPlay={isActive}
         isLooping
-        isMuted={isMuted}
       />
 
       {/* Tap overlay */}
@@ -120,21 +114,6 @@ const VideoItem = ({ item, isActive }) => {
               color="rgba(255,255,255,0.9)"
               style={{ marginBottom: 20 }}
             />
-
-            {/* Mute / Unmute */}
-            <TouchableOpacity
-              onPress={toggleMute}
-              style={styles.muteCenterButton}
-            >
-              <Ionicons
-                name={isMuted ? "volume-mute" : "volume-high"}
-                size={30}
-                color="white"
-              />
-              <Text style={styles.muteText}>
-                {isMuted ? "Muted" : "Sound On"}
-              </Text>
-            </TouchableOpacity>
           </View>
         )}
       </TouchableOpacity>
@@ -606,22 +585,6 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  muteCenterButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-
-  muteText: {
-    color: "white",
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: "600",
   },
 });
 

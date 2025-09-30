@@ -1,4 +1,4 @@
-const BASE_URL = "http://192.168.0.104:8000";
+const BASE_URL = "http://192.168.71.226:8000";
 
 const api = {
   get: async (endpoint, token = null) => {
