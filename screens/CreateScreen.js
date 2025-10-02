@@ -7,22 +7,80 @@ import {
   TouchableOpacity,
   StatusBar,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { CameraView, useCameraPermissions } from "expo-camera";
 
 const { width, height } = Dimensions.get("window");
 
 const CreateScreen = () => {
   const [recordingMode, setRecordingMode] = useState("60s");
   const [isRecording, setIsRecording] = useState(false);
-  const [selectedSpeed, setSelectedSpeed] = useState("1x");
-  const [selectedFilter, setSelectedFilter] = useState("Normal");
+  const [facing, setFacing] = useState("back");
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef(null);
 
   const recordingModes = ["15s", "60s", "3m", "10m"];
-  const speeds = ["0.3x", "0.5x", "1x", "2x", "3x"];
-  const filters = ["Normal", "Portrait", "Food", "Vibe", "G6"];
-  const effects = ["None", "Beauty", "Stickers", "AR", "Voice"];
+
+  // Check camera permissions
+  if (!permission) {
+    return <View />;
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.message}>
+          We need your permission to use the camera
+        </Text>
+        <TouchableOpacity
+          onPress={requestPermission}
+          style={styles.permissionButton}
+        >
+          <Text style={styles.permissionButtonText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Take photo function
+  const takePhoto = async () => {
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync();
+        Alert.alert("Success!", "Photo taken successfully");
+        console.log("Photo URI:", photo.uri);
+      } catch (error) {
+        Alert.alert("Error", "Failed to take photo");
+      }
+    }
+  };
+
+  // Record video function
+  const recordVideo = async () => {
+    if (cameraRef.current) {
+      try {
+        setIsRecording(true);
+        const video = await cameraRef.current.recordAsync();
+        Alert.alert("Success!", "Video recorded successfully");
+        console.log("Video URI:", video.uri);
+      } catch (error) {
+        Alert.alert("Error", "Failed to record video");
+      } finally {
+        setIsRecording(false);
+      }
+    }
+  };
+
+  // Stop recording
+  const stopRecording = async () => {
+    if (cameraRef.current) {
+      cameraRef.current.stopRecording();
+      setIsRecording(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -60,74 +118,34 @@ const CreateScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.cameraPreview}>
-        <View style={styles.previewPlaceholder}>
-          <Ionicons name="camera" size={80} color="#333" />
-          <Text style={styles.previewText}>Camera Preview</Text>
+      {/* Expo Camera View */}
+      <CameraView ref={cameraRef} style={styles.camera} facing={facing}>
+        <View style={styles.cameraOverlay}>
+          <Text style={styles.recordingText}>
+            {isRecording ? "Recording..." : "Ready to create"}
+          </Text>
         </View>
-      </View>
+      </CameraView>
 
+      {/* Side Controls */}
       <View style={styles.sideControls}>
-        <TouchableOpacity style={styles.sideButton}>
+        <TouchableOpacity
+          style={styles.sideButton}
+          onPress={() =>
+            setFacing((current) => (current === "back" ? "front" : "back"))
+          }
+        >
           <Ionicons name="camera-reverse" size={28} color="white" />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.sideButton}>
-          <Ionicons name="sparkles" size={28} color="white" />
-          <Text style={styles.sideButtonText}>Effects</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.sideButton}>
-          <Ionicons name="color-filter" size={28} color="white" />
-          <Text style={styles.sideButtonText}>Filters</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.sideButton}>
-          <Ionicons name="timer" size={28} color="white" />
-          <Text style={styles.sideButtonText}>Timer</Text>
-        </TouchableOpacity>
       </View>
 
+      {/* Bottom Controls */}
       <View style={styles.bottomControls}>
-        {/* Speed and Filter Controls */}
-        <View style={styles.controlsRow}>
-          <View style={styles.controlGroup}>
-            <Text style={styles.controlLabel}>Speed</Text>
-            <View style={styles.speedControls}>
-              {speeds.map((speed) => (
-                <TouchableOpacity
-                  key={speed}
-                  style={[
-                    styles.speedButton,
-                    selectedSpeed === speed && styles.activeSpeedButton,
-                  ]}
-                  onPress={() => setSelectedSpeed(speed)}
-                >
-                  <Text
-                    style={[
-                      styles.speedText,
-                      selectedSpeed === speed && styles.activeSpeedText,
-                    ]}
-                  >
-                    {speed}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-
-        {/* Main Recording Controls */}
         <View style={styles.recordingControls}>
-          <TouchableOpacity style={styles.galleryButton}>
-            <View style={styles.galleryPreview}>
-              <Ionicons name="images" size={24} color="white" />
-            </View>
-          </TouchableOpacity>
-
+          {/* Record/Stop Button */}
           <TouchableOpacity
             style={[styles.recordButton, isRecording && styles.recordingButton]}
-            onPress={() => setIsRecording(!isRecording)}
+            onPress={isRecording ? stopRecording : recordVideo}
           >
             <View
               style={[
@@ -137,22 +155,9 @@ const CreateScreen = () => {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.templatesButton}>
-            <Ionicons name="apps" size={24} color="white" />
-            <Text style={styles.templatesText}>Templates</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Bottom Options */}
-        <View style={styles.bottomOptions}>
-          <TouchableOpacity style={styles.bottomOption}>
-            <Text style={styles.bottomOptionText}>Upload</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.bottomOption}>
-            <Text style={styles.bottomOptionText}>Sounds</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.bottomOption}>
-            <Text style={styles.bottomOptionText}>Live</Text>
+          {/* Photo Button */}
+          <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
+            <Ionicons name="camera" size={24} color="white" />
           </TouchableOpacity>
         </View>
       </View>
@@ -172,6 +177,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
+    zIndex: 1,
   },
   headerButton: {
     padding: 4,
@@ -198,19 +204,20 @@ const styles = StyleSheet.create({
   activeModeText: {
     color: "#000",
   },
-  cameraPreview: {
+  camera: {
     flex: 1,
-    backgroundColor: "#111",
-    justifyContent: "center",
-    alignItems: "center",
   },
-  previewPlaceholder: {
+  cameraOverlay: {
+    flex: 1,
+    backgroundColor: "transparent",
+    justifyContent: "flex-end",
     alignItems: "center",
+    paddingBottom: 100,
   },
-  previewText: {
-    color: "#666",
+  recordingText: {
+    color: "white",
     fontSize: 16,
-    marginTop: 12,
+    fontWeight: "600",
   },
   sideControls: {
     position: "absolute",
@@ -223,71 +230,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  sideButtonText: {
-    color: "white",
-    fontSize: 10,
-    marginTop: 4,
-    fontWeight: "500",
-  },
   bottomControls: {
+    position: "absolute",
+    bottom: 40,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
-  controlsRow: {
-    marginBottom: 20,
-  },
-  controlGroup: {
-    alignItems: "center",
-  },
-  controlLabel: {
-    color: "white",
-    fontSize: 12,
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  speedControls: {
-    flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 20,
-    padding: 4,
-  },
-  speedButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  activeSpeedButton: {
-    backgroundColor: "#FFFFFF",
-  },
-  speedText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  activeSpeedText: {
-    color: "#000",
   },
   recordingControls: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  galleryButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: "#333",
     justifyContent: "center",
     alignItems: "center",
-  },
-  galleryPreview: {
-    width: 40,
-    height: 40,
-    borderRadius: 6,
-    backgroundColor: "#555",
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 40,
   },
   recordButton: {
     width: 80,
@@ -314,25 +268,27 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: "#FFFFFF",
   },
-  templatesButton: {
-    alignItems: "center",
+  photoButton: {
     width: 50,
-  },
-  templatesText: {
-    color: "white",
-    fontSize: 10,
-    marginTop: 4,
-    fontWeight: "500",
-  },
-  bottomOptions: {
-    flexDirection: "row",
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#333",
     justifyContent: "center",
-    gap: 40,
-  },
-  bottomOption: {
     alignItems: "center",
   },
-  bottomOptionText: {
+  message: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  permissionButton: {
+    backgroundColor: "#FF0050",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  permissionButtonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",

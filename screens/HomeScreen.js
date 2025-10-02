@@ -10,6 +10,7 @@ import {
   FlatList,
   StatusBar,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
@@ -29,6 +30,7 @@ const transformPostData = (post) => {
       : "Original Sound",
     likes: post.likes_count?.toString() || "0",
     comments: post.comments_count?.toString() || "0",
+    cover: post.music.cover || "https://via.placeholder.com/150",
     saves: "0",
     shares: "0",
     profileImage: post.user?.avatar
@@ -51,6 +53,8 @@ const VideoItem = ({ item, isActive }) => {
   const [isSaved, setIsSaved] = useState(false);
   const videoRef = useRef(null);
   const isFocused = useIsFocused();
+  const lastTapRef = useRef(null);
+  const likeAnim = useRef(new Animated.Value(0)).current;
 
   const togglePlayback = async () => {
     if (videoRef.current) {
@@ -66,7 +70,7 @@ const VideoItem = ({ item, isActive }) => {
 
       setShowControls(true);
 
-      setTimeout(() => setShowControls(false), 1000);
+      setTimeout(() => setShowControls(false), 383682000);
     }
   };
 
@@ -81,6 +85,51 @@ const VideoItem = ({ item, isActive }) => {
       }
     }
   }, [isActive]);
+
+  const handleTap = () => {
+    const now = Date.now();
+
+    if (lastTapRef.current && now - lastTapRef.current < 300) {
+      setIsLiked(true);
+      triggerLikeAnimation();
+      lastTapRef.current = null;
+    } else {
+      lastTapRef.current = now;
+      setTimeout(() => {
+        if (lastTapRef.current && now === lastTapRef.current) {
+          togglePlayback();
+          lastTapRef.current = null;
+        }
+      }, 300);
+    }
+  };
+
+  const triggerLikeAnimation = () => {
+    likeAnim.setValue(0);
+    Animated.sequence([
+      Animated.spring(likeAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+      Animated.timing(likeAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const heartStyle = {
+    opacity: likeAnim,
+    transform: [
+      {
+        scale: likeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.5, 1.5],
+        }),
+      },
+    ],
+  };
 
   return (
     <View style={styles.videoContainer}>
@@ -102,12 +151,11 @@ const VideoItem = ({ item, isActive }) => {
       {/* Tap overlay */}
       <TouchableOpacity
         style={styles.videoOverlay}
-        onPress={togglePlayback}
+        onPress={() => handleTap()}
         activeOpacity={1}
       >
         {showControls && (
           <View style={styles.centerControls}>
-            {/* Pause / Play */}
             <Ionicons
               name={isPlaying ? "pause" : "play"}
               size={60}
@@ -117,6 +165,9 @@ const VideoItem = ({ item, isActive }) => {
           </View>
         )}
       </TouchableOpacity>
+      <Animated.View style={[styles.likeHeart, heartStyle]}>
+        <Ionicons name="heart" size={100} color="red" />
+      </Animated.View>
 
       <View style={styles.rightBar}>
         {/* Profile with red dot indicator */}
@@ -169,10 +220,7 @@ const VideoItem = ({ item, isActive }) => {
         {/* Spinning album art */}
         <TouchableOpacity style={styles.albumContainer}>
           <View style={styles.albumArt}>
-            <Image
-              source={{ uri: item.albumImage }}
-              style={styles.albumImage}
-            />
+            <Image source={{ uri: item.cover }} style={styles.albumImage} />
           </View>
         </TouchableOpacity>
       </View>
@@ -580,11 +628,17 @@ const styles = StyleSheet.create({
   },
   centerControls: {
     position: "absolute",
-    top: "40%", // ekranning o‘rtasida
+    top: "40%",
     left: 0,
     right: 0,
     alignItems: "center",
     justifyContent: "center",
+  },
+  likeHeart: {
+    position: "absolute",
+    alignSelf: "center",
+    top: "40%",
+    zIndex: 10,
   },
 });
 
