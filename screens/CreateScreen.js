@@ -63,12 +63,10 @@ export default function CreateScreen({ navigation }) {
     formData.append("title", title);
     formData.append("description", description);
 
-    // 🔧 FORMDA TANI TO'G'RI QO'SHISH
     const fileType = media.type === "video" ? "video/mp4" : "image/jpeg";
     const fileName =
       media.fileName || `upload_${Date.now()}.${media.uri.split(".").pop()}`;
 
-    // To'g'ri formatda fayl qo'shish
     formData.append("post", {
       uri: media.uri,
       type: fileType,
@@ -83,40 +81,19 @@ export default function CreateScreen({ navigation }) {
         return;
       }
 
-      const API_URL = "http://192.168.0.103:8000";
-
-      // 🔧 DEBUG: FormData ni ko'rish
-      console.log("FormData contents:");
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
-      const response = await fetch(`${API_URL}/posts/post/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // "Content-Type" ni O'CHIRISH - FormData avtomatik qo'shadi
-        },
-        body: formData,
-      });
-
-      // 🔧 Xatolikni batafsil ko'rish
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server xatosi:", errorText);
-        throw new Error(
-          `HTTP xatosi! Status: ${response.status}. Details: ${errorText}`
-        );
-      }
-
-      const result = await response.json();
-      console.log("Muvaffaqiyatli javob:", result);
+      // ✅ Bu yerda response JSON bo‘lib qaytadi
+      const result = await api.uploadPost("/posts/post/", formData, token);
 
       Alert.alert("✅ Post joylandi", `ID: ${result.id}`);
       setTitle("");
       setDescription("");
       setMedia(null);
-      navigation.goBack();
+
+      // 🔥 Home ga refresh bilan qaytish
+      navigation.navigate("Home", {
+        refresh: true,
+        timestamp: Date.now(),
+      });
     } catch (err) {
       console.error("Xato tafsilotlari:", err);
       Alert.alert("❌ Xatolik", err.message || "Serverga ulanmadi");

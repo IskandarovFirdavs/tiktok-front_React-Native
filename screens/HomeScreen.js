@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused, useRoute } from "@react-navigation/native";
 import api from "../src/api/api";
 import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
@@ -61,208 +61,6 @@ const transformPostData = (post) => {
     isVideo: isVideo,
     isImage: isImage,
   };
-};
-
-const VideoItem = ({ item, isActive }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showControls, setShowControls] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const videoRef = useRef(null);
-  const isFocused = useIsFocused();
-  const lastTapRef = useRef(null);
-  const likeAnim = useRef(new Animated.Value(0)).current;
-
-  const togglePlayback = async () => {
-    if (videoRef.current) {
-      const status = await videoRef.current.getStatusAsync();
-
-      if (status.isPlaying) {
-        await videoRef.current.pauseAsync();
-        setIsPlaying(false);
-      } else {
-        await videoRef.current.playAsync();
-        setIsPlaying(true);
-      }
-
-      setShowControls(true);
-
-      setTimeout(() => setShowControls(false), 383682000);
-    }
-  };
-
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isActive) {
-        videoRef.current.playAsync();
-        setIsPlaying(true);
-      } else {
-        videoRef.current.pauseAsync();
-        setIsPlaying(false);
-      }
-    }
-  }, [isActive]);
-
-  const handleTap = () => {
-    const now = Date.now();
-
-    if (lastTapRef.current && now - lastTapRef.current < 300) {
-      setIsLiked(true);
-      triggerLikeAnimation();
-      lastTapRef.current = null;
-    } else {
-      lastTapRef.current = now;
-      setTimeout(() => {
-        if (lastTapRef.current && now === lastTapRef.current) {
-          togglePlayback();
-          lastTapRef.current = null;
-        }
-      }, 300);
-    }
-  };
-
-  const triggerLikeAnimation = () => {
-    likeAnim.setValue(0);
-    Animated.sequence([
-      Animated.spring(likeAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-      }),
-      Animated.timing(likeAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const heartStyle = {
-    opacity: likeAnim,
-    transform: [
-      {
-        scale: likeAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.5, 1.5],
-        }),
-      },
-    ],
-  };
-
-  return (
-    <View style={styles.videoContainer}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="transparent"
-        translucent
-      />
-
-      <Video
-        ref={videoRef}
-        source={{ uri: item.uri }}
-        style={styles.video}
-        resizeMode="cover"
-        shouldPlay={isActive}
-        isLooping
-      />
-
-      {/* Tap overlay */}
-      <TouchableOpacity
-        style={styles.videoOverlay}
-        onPress={() => handleTap()}
-        activeOpacity={1}
-      >
-        {showControls && (
-          <View style={styles.centerControls}>
-            <Ionicons
-              name={isPlaying ? "pause" : "play"}
-              size={60}
-              color="rgba(255,255,255,0.9)"
-              style={{ marginBottom: 20 }}
-            />
-          </View>
-        )}
-      </TouchableOpacity>
-      <Animated.View style={[styles.likeHeart, heartStyle]}>
-        <Ionicons name="heart" size={100} color="red" />
-      </Animated.View>
-
-      <View style={styles.rightBar}>
-        {/* Profile with red dot indicator */}
-        <TouchableOpacity style={styles.profileContainer}>
-          <Image
-            source={{ uri: item.profileImage }}
-            style={styles.profileImage}
-          />
-          {!item.isFollowing && <View style={styles.followDot} />}
-        </TouchableOpacity>
-
-        {/* Like button */}
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => setIsLiked(!isLiked)}
-        >
-          <Ionicons
-            name={isLiked ? "heart" : "heart-outline"}
-            size={35}
-            color={isLiked ? "#FF0050" : "white"}
-          />
-          <Text style={styles.actionText}>{item.likes}</Text>
-        </TouchableOpacity>
-
-        {/* Comment button */}
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="chatbubble-outline" size={32} color="white" />
-          <Text style={styles.actionText}>{item.comments}</Text>
-        </TouchableOpacity>
-
-        {/* Save/Bookmark button */}
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => setIsSaved(!isSaved)}
-        >
-          <Ionicons
-            name={isSaved ? "bookmark" : "bookmark-outline"}
-            size={32}
-            color={isSaved ? "#FFD700" : "white"}
-          />
-          <Text style={styles.actionText}>{item.saves}</Text>
-        </TouchableOpacity>
-
-        {/* Share button */}
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="arrow-redo-outline" size={32} color="white" />
-          <Text style={styles.actionText}>{item.shares}</Text>
-        </TouchableOpacity>
-
-        {/* Spinning album art */}
-        <TouchableOpacity style={styles.albumContainer}>
-          <View style={styles.albumArt}>
-            <Image source={{ uri: item.cover }} style={styles.albumImage} />
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.bottomOverlay}>
-        <View style={styles.bottomInfo}>
-          <TouchableOpacity>
-            <Text style={styles.username}>{item.username}</Text>
-          </TouchableOpacity>
-          <Text style={styles.videoDescription} numberOfLines={2}>
-            {item.description}
-          </Text>
-          <TouchableOpacity style={styles.soundInfo}>
-            <Ionicons name="musical-notes" size={14} color="white" />
-            <Text style={styles.soundText} numberOfLines={1}>
-              {item.sound}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.videoDescription} numberOfLines={2}>
-            {item.hashtags}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
 };
 
 const MediaItem = ({ item, isActive }) => {
@@ -361,13 +159,12 @@ const MediaItem = ({ item, isActive }) => {
         translucent
       />
 
-      {/* 🔥 VIDEO YOKI IMAGE KO'RSATISH */}
       {item.isVideo ? (
         <Video
           ref={videoRef}
           source={{ uri: item.uri }}
           style={styles.video}
-          resizeMode="cover"
+          resizeMode="contain"
           shouldPlay={isActive && isFocused}
           isLooping
         />
@@ -375,7 +172,7 @@ const MediaItem = ({ item, isActive }) => {
         <Image
           source={{ uri: item.uri }}
           style={styles.image}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       ) : (
         <View style={styles.unknownMedia}>
@@ -456,12 +253,6 @@ const MediaItem = ({ item, isActive }) => {
           <Text style={styles.actionText}>{item.shares}</Text>
         </TouchableOpacity>
 
-        {/* Media type indicator */}
-        <View style={styles.mediaTypeIndicator}>
-          {item.isVideo && <Ionicons name="videocam" size={16} color="white" />}
-          {item.isImage && <Ionicons name="image" size={16} color="white" />}
-        </View>
-
         {/* Spinning album art */}
         <TouchableOpacity style={styles.albumContainer}>
           <View style={styles.albumArt}>
@@ -512,33 +303,21 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
+  const route = useRoute(); // 🔥 YANGI: Route ni olish
 
   const fetchVideos = async () => {
     try {
       setLoading(true);
+      setError(null);
+
+      console.log("🔄 Fetching videos...");
       const data = await api.get("/posts/post/");
 
       let postsArray = Array.isArray(data)
         ? data
         : data.results || data.posts || data.data || [];
 
-      // Debug uchun har bir postni tekshirish
-      postsArray.forEach((post, index) => {
-        const fileUri = post.post || "";
-        const fileExtension = fileUri.split(".").pop()?.toLowerCase() || "";
-        console.log(`Post ${index}:`, {
-          id: post.id,
-          uri: fileUri,
-          extension: fileExtension,
-          type:
-            fileExtension === "mp4"
-              ? "video"
-              : ["jpg", "jpeg", "png"].includes(fileExtension)
-              ? "image"
-              : "unknown",
-        });
-      });
-
+      console.log(`📹 ${postsArray.length} posts loaded`);
       const transformedVideos = postsArray.map(transformPostData);
       setVideos(transformedVideos);
     } catch (err) {
@@ -549,6 +328,27 @@ const HomeScreen = () => {
     }
   };
 
+  // 🔥 YANGI: Route parametrlari o'zgarganda
+  useEffect(() => {
+    if (route.params?.refresh) {
+      console.log("🔄 Refresh triggered from tab press");
+      fetchVideos();
+
+      // Parametrni tozalash (qayta refresh qilmaslik uchun)
+      navigation.setParams({ refresh: false });
+    }
+  }, [route.params?.refresh]);
+
+  // 🔥 YANGI: Screen focus bo'lganda ham refresh
+  const isFocused = useIsFocused();
+  useEffect(() => {
+    if (isFocused) {
+      console.log("🏠 Home screen focused - refreshing data");
+      fetchVideos();
+    }
+  }, [isFocused]);
+
+  // Dastlabki yuklash
   useEffect(() => {
     fetchVideos();
   }, []);
@@ -696,7 +496,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     alignSelf: "flex-start",
-    marginTop: 5,
+    marginTop: -10,
   },
   mediaTypeText: {
     color: "white",
@@ -832,7 +632,7 @@ const styles = StyleSheet.create({
   rightBar: {
     position: "absolute",
     right: 12,
-    bottom: 100,
+    bottom: 50,
     alignItems: "center",
     zIndex: 10,
   },
@@ -861,7 +661,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 2,
     paddingVertical: 4,
   },
   actionText: {
@@ -891,7 +691,7 @@ const styles = StyleSheet.create({
   },
   bottomOverlay: {
     position: "absolute",
-    bottom: -1,
+    bottom: -70,
     left: 0,
     right: 0,
     height: 220,

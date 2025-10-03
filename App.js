@@ -6,7 +6,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// Import screens
+import { useFocusEffect } from "@react-navigation/native";
 import HomeScreen from "./screens/HomeScreen";
 import InboxScreen from "./screens/InboxScreen";
 import ProfileScreen from "./screens/ProfileScreen";
@@ -52,6 +52,16 @@ function MainTabs() {
             />
           ),
         }}
+        listeners={({ navigation }) => ({
+          // 🔥 YANGI: Tab bosilganda refresh
+          tabPress: (e) => {
+            // Home tab bosilganda
+            navigation.navigate("Home", {
+              refresh: true,
+              timestamp: Date.now(),
+            });
+          },
+        })}
       />
       <Tab.Screen
         name="Friends"
