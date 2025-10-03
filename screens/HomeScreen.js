@@ -20,6 +20,18 @@ import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
 
 const transformPostData = (post) => {
+  // Fayl URL dan turini aniqlash
+  const fileUri = post.post || "";
+  const fileExtension = fileUri.split(".").pop()?.toLowerCase() || "";
+
+  // Video formatlari
+  const videoExtensions = ["mp4", "mov", "avi", "mkv", "webm", "3gp"];
+  const isVideo = videoExtensions.includes(fileExtension);
+
+  // Rasm formatlari
+  const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp"];
+  const isImage = imageExtensions.includes(fileExtension);
+
   return {
     id: post.id.toString(),
     uri: post.post,
@@ -30,7 +42,7 @@ const transformPostData = (post) => {
       : "Original Sound",
     likes: post.likes_count?.toString() || "0",
     comments: post.comments_count?.toString() || "0",
-    cover: post.music.cover || "https://via.placeholder.com/150",
+    cover: post.music?.cover || "https://via.placeholder.com/150",
     saves: "0",
     shares: "0",
     profileImage: post.user?.avatar
@@ -39,10 +51,15 @@ const transformPostData = (post) => {
     albumImage:
       post.user?.avatar || "https://randomuser.me/api/portraits/lego/2.jpg",
     isFollowing: false,
-    fileName: post.post?.split("/").pop() || "video.mp4",
-    extension: "mp4",
-    title: post.title || "Video",
+    fileName: post.post?.split("/").pop() || "file",
+    extension: fileExtension,
+    title: post.title || "Post",
     hashtags: post.hashtags?.map((h) => `#${h.name}`).join(" ") || "",
+
+    // 🔥 YANGI: Media turi
+    mediaType: isVideo ? "video" : isImage ? "image" : "unknown",
+    isVideo: isVideo,
+    isImage: isImage,
   };
 };
 
@@ -248,6 +265,246 @@ const VideoItem = ({ item, isActive }) => {
   );
 };
 
+const MediaItem = ({ item, isActive }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const videoRef = useRef(null);
+  const isFocused = useIsFocused();
+  const lastTapRef = useRef(null);
+  const likeAnim = useRef(new Animated.Value(0)).current;
+
+  const togglePlayback = async () => {
+    if (item.isVideo && videoRef.current) {
+      const status = await videoRef.current.getStatusAsync();
+
+      if (status.isPlaying) {
+        await videoRef.current.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        await videoRef.current.playAsync();
+        setIsPlaying(true);
+      }
+
+      setShowControls(true);
+      setTimeout(() => setShowControls(false), 2000);
+    }
+  };
+
+  useEffect(() => {
+    if (item.isVideo && videoRef.current) {
+      if (isActive && isFocused) {
+        videoRef.current.playAsync();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pauseAsync();
+        setIsPlaying(false);
+      }
+    }
+  }, [isActive, isFocused, item.isVideo]);
+
+  const handleTap = () => {
+    const now = Date.now();
+
+    if (lastTapRef.current && now - lastTapRef.current < 300) {
+      // Double tap - like
+      setIsLiked(true);
+      triggerLikeAnimation();
+      lastTapRef.current = null;
+    } else {
+      // Single tap - play/pause yoki hech narsa (rasm uchun)
+      lastTapRef.current = now;
+      setTimeout(() => {
+        if (lastTapRef.current && now === lastTapRef.current) {
+          if (item.isVideo) {
+            togglePlayback();
+          }
+          lastTapRef.current = null;
+        }
+      }, 300);
+    }
+  };
+
+  const triggerLikeAnimation = () => {
+    likeAnim.setValue(0);
+    Animated.sequence([
+      Animated.spring(likeAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+      Animated.timing(likeAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const heartStyle = {
+    opacity: likeAnim,
+    transform: [
+      {
+        scale: likeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.5, 1.5],
+        }),
+      },
+    ],
+  };
+
+  return (
+    <View style={styles.videoContainer}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      {/* 🔥 VIDEO YOKI IMAGE KO'RSATISH */}
+      {item.isVideo ? (
+        <Video
+          ref={videoRef}
+          source={{ uri: item.uri }}
+          style={styles.video}
+          resizeMode="cover"
+          shouldPlay={isActive && isFocused}
+          isLooping
+        />
+      ) : item.isImage ? (
+        <Image
+          source={{ uri: item.uri }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.unknownMedia}>
+          <Ionicons name="document-outline" size={50} color="white" />
+          <Text style={styles.unknownText}>Unknown media type</Text>
+        </View>
+      )}
+
+      {/* Tap overlay */}
+      <TouchableOpacity
+        style={styles.videoOverlay}
+        onPress={handleTap}
+        activeOpacity={1}
+      >
+        {showControls && item.isVideo && (
+          <View style={styles.centerControls}>
+            <Ionicons
+              name={isPlaying ? "pause" : "play"}
+              size={60}
+              color="rgba(255,255,255,0.9)"
+              style={{ marginBottom: 20 }}
+            />
+          </View>
+        )}
+      </TouchableOpacity>
+
+      {/* Like heart animation */}
+      <Animated.View style={[styles.likeHeart, heartStyle]}>
+        <Ionicons name="heart" size={100} color="red" />
+      </Animated.View>
+
+      {/* Right action buttons */}
+      <View style={styles.rightBar}>
+        {/* Profile with red dot indicator */}
+        <TouchableOpacity style={styles.profileContainer}>
+          <Image
+            source={{ uri: item.profileImage }}
+            style={styles.profileImage}
+          />
+          {!item.isFollowing && <View style={styles.followDot} />}
+        </TouchableOpacity>
+
+        {/* Like button */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setIsLiked(!isLiked)}
+        >
+          <Ionicons
+            name={isLiked ? "heart" : "heart-outline"}
+            size={35}
+            color={isLiked ? "#FF0050" : "white"}
+          />
+          <Text style={styles.actionText}>{item.likes}</Text>
+        </TouchableOpacity>
+
+        {/* Comment button */}
+        <TouchableOpacity style={styles.actionButton}>
+          <Ionicons name="chatbubble-outline" size={32} color="white" />
+          <Text style={styles.actionText}>{item.comments}</Text>
+        </TouchableOpacity>
+
+        {/* Save/Bookmark button */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setIsSaved(!isSaved)}
+        >
+          <Ionicons
+            name={isSaved ? "bookmark" : "bookmark-outline"}
+            size={32}
+            color={isSaved ? "#FFD700" : "white"}
+          />
+          <Text style={styles.actionText}>{item.saves}</Text>
+        </TouchableOpacity>
+
+        {/* Share button */}
+        <TouchableOpacity style={styles.actionButton}>
+          <Ionicons name="arrow-redo-outline" size={32} color="white" />
+          <Text style={styles.actionText}>{item.shares}</Text>
+        </TouchableOpacity>
+
+        {/* Media type indicator */}
+        <View style={styles.mediaTypeIndicator}>
+          {item.isVideo && <Ionicons name="videocam" size={16} color="white" />}
+          {item.isImage && <Ionicons name="image" size={16} color="white" />}
+        </View>
+
+        {/* Spinning album art */}
+        <TouchableOpacity style={styles.albumContainer}>
+          <View style={styles.albumArt}>
+            <Image
+              source={{ uri: item.cover }}
+              style={styles.albumImage}
+              defaultSource={{ uri: "https://via.placeholder.com/150" }}
+            />
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom info overlay */}
+      <View style={styles.bottomOverlay}>
+        <View style={styles.bottomInfo}>
+          <TouchableOpacity>
+            <Text style={styles.username}>{item.username}</Text>
+          </TouchableOpacity>
+          <Text style={styles.videoDescription} numberOfLines={2}>
+            {item.description}
+          </Text>
+          <TouchableOpacity style={styles.soundInfo}>
+            <Ionicons name="musical-notes" size={14} color="white" />
+            <Text style={styles.soundText} numberOfLines={1}>
+              {item.sound}
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.videoDescription} numberOfLines={2}>
+            {item.hashtags}
+          </Text>
+
+          {/* Media type badge */}
+          <View style={styles.mediaTypeBadge}>
+            <Text style={styles.mediaTypeText}>
+              {item.isVideo ? "VIDEO" : item.isImage ? "PHOTO" : "FILE"}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
 const HomeScreen = () => {
   const [activeTab, setActiveTab] = useState("For You");
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -259,13 +516,29 @@ const HomeScreen = () => {
   const fetchVideos = async () => {
     try {
       setLoading(true);
-      setError(null);
-
       const data = await api.get("/posts/post/");
 
       let postsArray = Array.isArray(data)
         ? data
         : data.results || data.posts || data.data || [];
+
+      // Debug uchun har bir postni tekshirish
+      postsArray.forEach((post, index) => {
+        const fileUri = post.post || "";
+        const fileExtension = fileUri.split(".").pop()?.toLowerCase() || "";
+        console.log(`Post ${index}:`, {
+          id: post.id,
+          uri: fileUri,
+          extension: fileExtension,
+          type:
+            fileExtension === "mp4"
+              ? "video"
+              : ["jpg", "jpeg", "png"].includes(fileExtension)
+              ? "image"
+              : "unknown",
+        });
+      });
+
       const transformedVideos = postsArray.map(transformPostData);
       setVideos(transformedVideos);
     } catch (err) {
@@ -375,7 +648,7 @@ const HomeScreen = () => {
         data={videos}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (
-          <VideoItem item={item} isActive={index === currentVideoIndex} />
+          <MediaItem item={item} isActive={index === currentVideoIndex} />
         )}
         pagingEnabled
         showsVerticalScrollIndicator={false}
@@ -393,6 +666,44 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  image: {
+    width: width,
+    height: height,
+    position: "absolute",
+  },
+  unknownMedia: {
+    width: width,
+    height: height,
+    position: "absolute",
+    backgroundColor: "#333",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  unknownText: {
+    color: "white",
+    marginTop: 10,
+    fontSize: 16,
+  },
+  mediaTypeIndicator: {
+    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 5,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  mediaTypeBadge: {
+    backgroundColor: "rgba(255,0,80,0.7)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+    marginTop: 5,
+  },
+  mediaTypeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#000",

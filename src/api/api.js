@@ -1,4 +1,4 @@
-const BASE_URL = "http://192.168.71.226:8000";
+const BASE_URL = "http://192.168.0.103:8000";
 
 const handleResponse = async (response) => {
   const contentType = response.headers.get("content-type");

@@ -36,7 +36,7 @@ const LoginScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      Alert.alert("Error", "Network error. Please try again.");
+      Alert.alert("Error", error.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
