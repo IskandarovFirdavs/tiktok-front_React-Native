@@ -15,7 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../src/api/api";
-
+import { Video } from "expo-av";
 const { width } = Dimensions.get("window");
 
 const ProfileScreen = ({ navigation }) => {
@@ -55,23 +55,22 @@ const ProfileScreen = ({ navigation }) => {
         return;
       }
 
-      // 👤 User info
-      const userData = await api.get("/users/me/", token);
-      setUserData(userData);
+      // 👤 User info va postlar bitta requestda
+      const data = await api.get("/users/me/", token);
+      setUserData(data);
 
-      // 🎬 User videos
-      const posts = await api.get("/posts/post/", token);
-
-      // Ba’zi backendlarda array bevosita keladi, ba’zilarida esa { results: [...] }
-      const postsArray = Array.isArray(posts)
-        ? posts
-        : posts.results || posts.data || [];
-
-      const transformedVideos = postsArray.map((post) => ({
+      // 🎬 Postlar
+      const transformedVideos = (data.posts || []).map((post) => ({
         id: post.id,
-        thumbnail: post.thumbnail || "https://via.placeholder.com/300x500.png",
-        duration: post.duration || "0:30",
-        views: post.views || "0",
+        videoUrl: post.post_url
+          ? api.fullUrl(post.post_url)
+          : api.fullUrl(post.post), // fallback
+        thumbnail:
+          post.thumbnail || post.cover
+            ? api.fullUrl(post.thumbnail || post.cover)
+            : "https://via.placeholder.com/300x500.png",
+        title: post.title || "Untitled",
+        created_at: post.created_at,
       }));
 
       setVideos(transformedVideos);
@@ -132,27 +131,20 @@ const ProfileScreen = ({ navigation }) => {
                 "https://randomuser.me/api/portraits/men/10.jpg",
             }}
             style={styles.profileImage}
-            onError={(e) =>
-              console.log("Error loading image:", e.nativeEvent.error)
-            }
           />
 
           <View style={styles.statsContainer}>
             <TouchableOpacity style={styles.stat}>
               <Text style={styles.statNumber}>
-                {userData?.following_count || 125}
+                {userData?.following_count || 0}
               </Text>
               <Text style={styles.statLabel}>Following</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.stat}>
               <Text style={styles.statNumber}>
-                {userData?.followers_count || "1.2M"}
+                {userData?.followers_count || 0}
               </Text>
               <Text style={styles.statLabel}>Followers</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.stat}>
-              <Text style={styles.statNumber}>15.8M</Text>
-              <Text style={styles.statLabel}>Likes</Text>
             </TouchableOpacity>
           </View>
 
@@ -213,21 +205,29 @@ const ProfileScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.videosGrid}>
-          {videos.map((video) => (
-            <TouchableOpacity key={video.id} style={styles.videoItem}>
-              <Image
-                source={{ uri: video.thumbnail }}
-                style={styles.videoThumbnail}
-              />
-              <View style={styles.videoDurationOverlay}>
-                <Text style={styles.videoDuration}>{video.duration}</Text>
-              </View>
-              <View style={styles.videoViewsOverlay}>
-                <Ionicons name="play" size={12} color="white" />
-                <Text style={styles.videoViews}>{video.views}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {videos.length === 0 ? (
+            <View
+              style={{ alignItems: "center", marginTop: 50, width: "100%" }}
+            >
+              <Ionicons name="videocam-off-outline" size={48} color="#666" />
+              <Text style={{ color: "#888", marginTop: 10 }}>
+                No videos uploaded yet 🎬
+              </Text>
+            </View>
+          ) : (
+            videos.map((video) => (
+              <TouchableOpacity
+                key={video.id}
+                style={styles.videoItem}
+                onPress={() => console.log("Open video", video.id)}
+              >
+                <Video
+                  source={{ uri: video.videoUrl }}
+                  style={styles.videoThumbnail}
+                />
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         <View style={styles.bottomPadding} />
@@ -453,6 +453,39 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 20,
+  },
+  videosGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: 1,
+    backgroundColor: "#000",
+  },
+
+  videoItem: {
+    width: width / 3 - 2,
+    height: (width / 3 - 2) * 1.6,
+    marginBottom: 2,
+    backgroundColor: "#111",
+    borderRadius: 6,
+    overflow: "hidden",
+    position: "relative",
+  },
+
+  videoThumbnail: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 6,
+    backgroundColor: "#000",
+  },
+  overlay: {
+    position: "absolute",
+    top: "40%",
+    left: "40%",
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

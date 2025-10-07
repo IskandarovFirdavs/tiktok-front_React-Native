@@ -164,7 +164,7 @@ const MediaItem = ({ item, isActive }) => {
           ref={videoRef}
           source={{ uri: item.uri }}
           style={styles.video}
-          resizeMode="contain"
+          resizeMode="cover"
           shouldPlay={isActive && isFocused}
           isLooping
         />
@@ -172,7 +172,7 @@ const MediaItem = ({ item, isActive }) => {
         <Image
           source={{ uri: item.uri }}
           style={styles.image}
-          resizeMode="contain"
+          resizeMode="cover"
         />
       ) : (
         <View style={styles.unknownMedia}>
@@ -272,7 +272,7 @@ const MediaItem = ({ item, isActive }) => {
             <Text style={styles.username}>{item.username}</Text>
           </TouchableOpacity>
           <Text style={styles.videoDescription} numberOfLines={2}>
-            {item.description}
+            {item.title} | {item.description} | {item.hashtags}
           </Text>
           <TouchableOpacity style={styles.soundInfo}>
             <Ionicons name="musical-notes" size={14} color="white" />
@@ -280,16 +280,6 @@ const MediaItem = ({ item, isActive }) => {
               {item.sound}
             </Text>
           </TouchableOpacity>
-          <Text style={styles.videoDescription} numberOfLines={2}>
-            {item.hashtags}
-          </Text>
-
-          {/* Media type badge */}
-          <View style={styles.mediaTypeBadge}>
-            <Text style={styles.mediaTypeText}>
-              {item.isVideo ? "VIDEO" : item.isImage ? "PHOTO" : "FILE"}
-            </Text>
-          </View>
         </View>
       </View>
     </View>
@@ -632,7 +622,7 @@ const styles = StyleSheet.create({
   rightBar: {
     position: "absolute",
     right: 12,
-    bottom: 50,
+    bottom: 100,
     alignItems: "center",
     zIndex: 10,
   },
@@ -691,7 +681,7 @@ const styles = StyleSheet.create({
   },
   bottomOverlay: {
     position: "absolute",
-    bottom: -70,
+    bottom: -10,
     left: 0,
     right: 0,
     height: 220,

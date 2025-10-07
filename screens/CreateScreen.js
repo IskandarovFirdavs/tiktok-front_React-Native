@@ -298,6 +298,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 4,
+    marginTop: 30,
   },
   postButtonDisabled: {
     backgroundColor: "#333",

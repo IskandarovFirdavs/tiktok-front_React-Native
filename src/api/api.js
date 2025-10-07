@@ -1,10 +1,9 @@
-const BASE_URL = "http://192.168.0.103:8000";
+const BASE_URL = "http://192.168.71.21:8000";
 
 const handleResponse = async (response) => {
   const contentType = response.headers.get("content-type");
 
   if (!response.ok) {
-    // If response is not OK, try to parse error message
     let errorMessage = `HTTP error! status: ${response.status}`;
 
     if (contentType && contentType.includes("application/json")) {
@@ -12,7 +11,6 @@ const handleResponse = async (response) => {
       errorMessage =
         errorData.detail || errorData.message || JSON.stringify(errorData);
     } else {
-      // If it's HTML, get the text and try to extract useful info
       const text = await response.text();
       console.log("Non-JSON response:", text.substring(0, 200));
       errorMessage = `Server error: ${response.status}`;
@@ -21,12 +19,10 @@ const handleResponse = async (response) => {
     throw new Error(errorMessage);
   }
 
-  // If response is OK and JSON, parse it
   if (contentType && contentType.includes("application/json")) {
     return await response.json();
   }
 
-  // For non-JSON successful responses, return the text
   return await response.text();
 };
 
@@ -35,9 +31,7 @@ const api = {
     const headers = {
       "Content-Type": "application/json",
     };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: "GET",
@@ -51,9 +45,7 @@ const api = {
     const headers = {
       "Content-Type": "application/json",
     };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",
@@ -66,9 +58,7 @@ const api = {
 
   uploadPost: async (endpoint, formData, token = null) => {
     const headers = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
     console.log("Uploading to:", `${BASE_URL}${endpoint}`);
 
@@ -79,6 +69,11 @@ const api = {
     });
 
     return handleResponse(response);
+  },
+
+  fullUrl: (path) => {
+    if (!path) return "";
+    return `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
   },
 };
 
